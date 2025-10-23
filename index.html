@@ -1,49 +1,583 @@
-<script src="https://d3js.org/d3.v7.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/d3-org-chart@3.0.1"></script>
-<script src="https://cdn.jsdelivr.net/npm/d3-flextree@2.1.2/build/d3-flextree.js"></script>
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Organigrama - Estructura Corporativa</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 20px;
+            font-family: 'Arial', sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+        }
+        .chart-container {
+            width: 100%;
+            height: 90vh;
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+            overflow: auto;
+            padding: 20px;
+        }
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+            color: white;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+        }
+        .header h1 {
+            margin: 0;
+            font-size: 32px;
+            font-weight: bold;
+        }
+        .header h2 {
+            margin: 10px 0 0 0;
+            font-size: 18px;
+            opacity: 0.9;
+            font-weight: normal;
+        }
+        .valores {
+            display: flex;
+            justify-content: center;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin-top: 15px;
+        }
+        .valor {
+            padding: 5px 12px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: bold;
+            color: white;
+        }
+        
+        /* Estilos para asegurar que botones y líneas estén fuera */
+        .org-chart .node-rect {
+            stroke: none !important;
+        }
+        
+        .org-chart .link {
+            stroke: #34495e !important;
+            stroke-width: 3px !important;
+            opacity: 0.8 !important;
+        }
+        
+        .org-chart .expander {
+            transform: translate(-20px, -20px) !important;
+            z-index: 1000 !important;
+        }
+        
+        .org-chart .node {
+            overflow: visible !important;
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>Estructura Organizacional</h1>
+        <h2>Sistema Integrado de Gestión Corporativa</h2>
+        <div class="valores">
+            <div class="valor" style="background: #3498db;">Calidad</div>
+            <div class="valor" style="background: #e74c3c;">Innovación</div>
+            <div class="valor" style="background: #27ae60;">Respeto</div>
+            <div class="valor" style="background: #f39c12;">Disciplina</div>
+            <div class="valor" style="background: #9b59b6;">Confiabilidad</div>
+            <div class="valor" style="background: #1abc9c;">Desarrollo</div>
+            <div class="valor" style="background: #d35400;">Gestión</div>
+        </div>
+    </div>
+    <div class="chart-container"></div>
 
-<div class="chart-container"></div>
+    <script src="https://d3js.org/d3.v7.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/d3-org-chart@3.0.1"></script>
+    <script src="https://cdn.jsdelivr.net/npm/d3-flextree@2.1.2/build/d3-flextree.js"></script>
 
-<script>
-  // This is the data used - https://github.com/ManuelQuinter0/OrganigramaCC/blob/main/data-oracle.csv
-  d3.csv(
-    'https://github.com/ManuelQuinter0/OrganigramaCC/blob/main/data-oracle.csv'
-  ).then((data) => {
-    new d3.OrgChart()
-      .nodeHeight((d) => 85 + 25)
-      .nodeWidth((d) => 220 + 2)
-      .childrenMargin((d) => 50)
-      .compactMarginBetween((d) => 35)
-      .compactMarginPair((d) => 30)
-      .neighbourMargin((a, b) => 20)
-      .nodeContent(function (d, i, arr, state) {
-        const color = '#FFFFFF';
-        const imageDiffVert = 25 + 2;
-        return `
-                <div style='width:${
-                  d.width
-                }px;height:${d.height}px;padding-top:${imageDiffVert - 2}px;padding-left:1px;padding-right:1px'>
-                        <div style="font-family: 'Inter', sans-serif;background-color:${color};  margin-left:-1px;width:${d.width - 2}px;height:${d.height - imageDiffVert}px;border-radius:10px;border: 1px solid #E4E2E9">
-                            <div style="display:flex;justify-content:flex-end;margin-top:5px;margin-right:8px">#${
-                              d.data.id
-                            }</div>
-                            <div style="background-color:${color};margin-top:${-imageDiffVert - 20}px;margin-left:${15}px;border-radius:100px;width:50px;height:50px;" ></div>
-                            <div style="margin-top:${
-                              -imageDiffVert - 20
-                            }px;">   <img src=" ${d.data.image}" style="margin-left:${20}px;border-radius:100px;width:40px;height:40px;" /></div>
-                            <div style="font-size:15px;color:#08011E;margin-left:20px;margin-top:10px">  ${
-                              d.data.name
-                            } </div>
-                            <div style="color:#716E7B;margin-left:20px;margin-top:3px;font-size:10px;"> ${
-                              d.data.position
-                            } </div>
+    <script>
+        // Datos de estructura organizacional
+        const areasData = [
+            // ===== GOBIERNO CORPORATIVO =====
+            {
+                id: "1",
+                parentId: "",
+                nombre: "Asamblea General de Accionistas",
+                tipo: "gobierno",
+                descripcion: "Máximo órgano de gobierno",
+                color: "#2c3e50",
+                icon: "🏛️"
+            },
+            {
+                id: "2", 
+                parentId: "1",
+                nombre: "Junta Directiva",
+                tipo: "gobierno",
+                descripcion: "Dirección estratégica corporativa",
+                color: "#34495e",
+                icon: "👑"
+            },
+            {
+                id: "3",
+                parentId: "1", 
+                nombre: "Revisoría Fiscal",
+                tipo: "gobierno",
+                descripcion: "Control y auditoría interna",
+                color: "#2c3e50",
+                icon: "📊"
+            },
 
+            // ===== ALTA DIRECCIÓN =====
+            {
+                id: "4",
+                parentId: "2",
+                nombre: "Gerente General",
+                tipo: "direccion",
+                descripcion: "Dirección general operativa",
+                color: "#e74c3c",
+                icon: "👨‍💼"
+            },
+            {
+                id: "5",
+                parentId: "2",
+                nombre: "Presidente",
+                tipo: "direccion", 
+                descripcion: "Presidencia ejecutiva",
+                color: "#c0392b",
+                icon: "🎯"
+            },
+
+            // ===== DEPARTAMENTO COMERCIAL (Gerente General) =====
+            {
+                id: "6",
+                parentId: "4",
+                nombre: "Departamento Comercial",
+                tipo: "departamento",
+                descripcion: "Gestión comercial",
+                color: "#3498db",
+                icon: "💰"
+            },
+            {
+                id: "7",
+                parentId: "6",
+                nombre: "Gestor Comercial",
+                tipo: "liderazgo",
+                descripcion: "Jefatura comercial",
+                color: "#2980b9",
+                icon: "📈"
+            },
+            {
+                id: "8",
+                parentId: "6",
+                nombre: "Asistente de Cartera",
+                tipo: "operativo",
+                descripcion: "Gestión de cartera",
+                color: "#3498db",
+                icon: "📋"
+            },
+            {
+                id: "9",
+                parentId: "6", 
+                nombre: "Asistente de Legalizaciones",
+                tipo: "operativo",
+                descripcion: "Procesos legales",
+                color: "#3498db",
+                icon: "⚖️"
+            },
+            {
+                id: "10",
+                parentId: "6",
+                nombre: "Asistente de Ventas", 
+                tipo: "operativo",
+                descripcion: "Soporte comercial",
+                color: "#3498db",
+                icon: "🤝"
+            },
+            {
+                id: "11",
+                parentId: "6",
+                nombre: "Asesores Comerciales",
+                tipo: "operativo",
+                descripcion: "Ventas y desarrollo",
+                color: "#3498db",
+                icon: "💼"
+            },
+
+            // ===== TESORERÍA (Gerente General) =====
+            {
+                id: "12",
+                parentId: "4",
+                nombre: "Tesorería",
+                tipo: "financiero",
+                descripcion: "Gestión financiera",
+                color: "#27ae60",
+                icon: "🏦"
+            },
+
+            // ===== PERSONAL DE APOYO (Gerente General) =====
+            {
+                id: "13",
+                parentId: "4",
+                nombre: "Personal de Apoyo",
+                tipo: "soporte",
+                descripcion: "Soporte administrativo",
+                color: "#95a5a6",
+                icon: "👥"
+            },
+            {
+                id: "14",
+                parentId: "13",
+                nombre: "Mensajero",
+                tipo: "operativo",
+                descripcion: "Servicios de mensajería",
+                color: "#7f8c8d",
+                icon: "🚚"
+            },
+            {
+                id: "15",
+                parentId: "13",
+                nombre: "Secretario de Gerencia",
+                tipo: "administrativo", 
+                descripcion: "Soporte directivo",
+                color: "#95a5a6",
+                icon: "📝"
+            },
+            {
+                id: "16",
+                parentId: "13",
+                nombre: "Servicios Generales",
+                tipo: "operativo",
+                descripcion: "Mantenimiento",
+                color: "#7f8c8d",
+                icon: "🔧"
+            },
+            {
+                id: "17",
+                parentId: "13", 
+                nombre: "Conductor",
+                tipo: "operativo",
+                descripcion: "Transporte corporativo",
+                color: "#7f8c8d",
+                icon: "🚗"
+            },
+
+            // ===== DEPARTAMENTO TÉCNICO (Presidente) =====
+            {
+                id: "18",
+                parentId: "5", 
+                nombre: "Departamento Técnico",
+                tipo: "tecnico",
+                descripcion: "Dirección de obras",
+                color: "#f39c12",
+                icon: "🏗️"
+            },
+            {
+                id: "19",
+                parentId: "18",
+                nombre: "Director de Obra",
+                tipo: "liderazgo",
+                descripcion: "Dirección técnica",
+                color: "#e67e22",
+                icon: "👷‍♂️"
+            },
+            {
+                id: "20",
+                parentId: "18",
+                nombre: "Gestor de Proyectos", 
+                tipo: "liderazgo",
+                descripcion: "Gestión de proyectos",
+                color: "#f39c12",
+                icon: "📐"
+            },
+
+            // ===== RESIDENTES DE OBRA (Departamento Técnico) =====
+            {
+                id: "21",
+                parentId: "18",
+                nombre: "Residentes de Obra",
+                tipo: "supervision",
+                descripcion: "Supervisión en sitio",
+                color: "#d35400",
+                icon: "🏭"
+            },
+            {
+                id: "22",
+                parentId: "21",
+                nombre: "Organismo Jurídico",
+                tipo: "especializado",
+                descripcion: "Asesoría legal",
+                color: "#d35400",
+                icon: "⚖️"
+            },
+            {
+                id: "23",
+                parentId: "21",
+                nombre: "Maestros",
+                tipo: "operativo",
+                descripcion: "Oficios especializados",
+                color: "#d35400",
+                icon: "🔨"
+            },
+            {
+                id: "24",
+                parentId: "21",
+                nombre: "Inspectores",
+                tipo: "supervision",
+                descripcion: "Control de calidad",
+                color: "#d35400",
+                icon: "🔍"
+            },
+            {
+                id: "25",
+                parentId: "21",
+                nombre: "Oficiales",
+                tipo: "operativo",
+                descripcion: "Personal calificado",
+                color: "#d35400",
+                icon: "👷"
+            },
+            {
+                id: "26",
+                parentId: "21", 
+                nombre: "Ayudantes",
+                tipo: "operativo",
+                descripcion: "Apoyo técnico",
+                color: "#d35400",
+                icon: "🛠️"
+            },
+            {
+                id: "27",
+                parentId: "21",
+                nombre: "Operarios",
+                tipo: "operativo",
+                descripcion: "Mano de obra",
+                color: "#d35400",
+                icon: "⚒️"
+            },
+            {
+                id: "28",
+                parentId: "21",
+                nombre: "Aseadoras",
+                tipo: "operativo",
+                descripcion: "Limpieza y mantenimiento",
+                color: "#d35400",
+                icon: "🧹"
+            },
+
+            // ===== TOPOGRAFÍA (Departamento Técnico) =====
+            {
+                id: "29",
+                parentId: "18",
+                nombre: "Topógrafo",
+                tipo: "especializado",
+                descripcion: "Jefatura topografía",
+                color: "#16a085",
+                icon: "📏"
+            },
+            {
+                id: "30", 
+                parentId: "29",
+                nombre: "Auxiliar de Topografía",
+                tipo: "operativo",
+                descripcion: "Trabajos de campo",
+                color: "#138d75",
+                icon: "🎯"
+            },
+            {
+                id: "31",
+                parentId: "29",
+                nombre: "Cadenero",
+                tipo: "operativo",
+                descripcion: "Mediciones topográficas",
+                color: "#16a085",
+                icon: "📐"
+            },
+
+            // ===== ELECTRICIDAD (Departamento Técnico) =====
+            {
+                id: "32",
+                parentId: "18",
+                nombre: "Residente Eléctrico",
+                tipo: "especializado",
+                descripcion: "Supervisión eléctrica",
+                color: "#9b59b6",
+                icon: "⚡"
+            },
+            {
+                id: "33",
+                parentId: "32",
+                nombre: "Supervisor Eléctrico",
+                tipo: "supervision",
+                descripcion: "Seguridad eléctrica",
+                color: "#8e44ad",
+                icon: "🔌"
+            },
+
+            // ===== SEGURIDAD Y SALUD (Departamento Técnico) =====
+            {
+                id: "34",
+                parentId: "18",
+                nombre: "Profesional en S.S.T.",
+                tipo: "especializado",
+                descripcion: "Seguridad laboral",
+                color: "#e74c3c",
+                icon: "🛡️"
+            },
+            {
+                id: "35",
+                parentId: "34",
+                nombre: "Auxiliar S.S.T.",
+                tipo: "operativo",
+                descripcion: "Apoyo seguridad",
+                color: "#c0392b",
+                icon: "⚠️"
+            },
+            {
+                id: "36",
+                parentId: "34",
+                nombre: "Ayudantes S.S.T.",
+                tipo: "operativo",
+                descripcion: "Prevención de riesgos",
+                color: "#e74c3c",
+                icon: "🚧"
+            },
+
+            // ===== SISTEMAS (Departamento Técnico) =====
+            {
+                id: "37",
+                parentId: "18",
+                nombre: "Técnico en Sistemas",
+                tipo: "especializado",
+                descripcion: "Soporte TI",
+                color: "#3498db",
+                icon: "💻"
+            },
+
+            // ===== DEPARTAMENTO FINANCIERO (Presidente) =====
+            {
+                id: "38", 
+                parentId: "5",
+                nombre: "Departamento Financiero",
+                tipo: "financiero",
+                descripcion: "Gestión financiera",
+                color: "#27ae60",
+                icon: "📊"
+            },
+            {
+                id: "39",
+                parentId: "38",
+                nombre: "Director Financiero",
+                tipo: "liderazgo",
+                descripcion: "Dirección financiera",
+                color: "#229954",
+                icon: "💹"
+            },
+
+            // ===== PRESUPUESTOS (Departamento Financiero) =====
+            {
+                id: "40",
+                parentId: "38",
+                nombre: "Ingeniero de Presupuestos",
+                tipo: "especializado",
+                descripcion: "Control de presupuestos",
+                color: "#27ae60",
+                icon: "📑"
+            },
+            {
+                id: "41",
+                parentId: "40",
+                nombre: "Auxiliar de Presupuestos",
+                tipo: "operativo",
+                descripcion: "Soporte presupuestal",
+                color: "#229954",
+                icon: "📋"
+            },
+
+            // ===== CONTABILIDAD (Departamento Financiero) =====
+            {
+                id: "42",
+                parentId: "38",
+                nombre: "Contador",
+                tipo: "especializado",
+                descripcion: "Contabilidad general",
+                color: "#2ecc71",
+                icon: "🧮"
+            },
+            {
+                id: "43",
+                parentId: "42",
+                nombre: "Contador Junior",
+                tipo: "operativo",
+                descripcion: "Apoyo contable",
+                color: "#27ae60",
+                icon: "📒"
+            },
+
+            // ===== GESTIÓN DOCUMENTAL (Departamento Financiero) =====
+            {
+                id: "44",
+                parentId: "38",
+                nombre: "Asistente Gestión Documental",
+                tipo: "administrativo",
+                descripcion: "Control documental",
+                color: "#27ae60",
+                icon: "📁"
+            }
+        ];
+
+        // Crear el organigrama con configuraciones específicas
+        const chart = new d3.OrgChart()
+            .nodeHeight((d) => 85)
+            .nodeWidth((d) => 210)
+            .childrenMargin((d) => 90)
+            .compactMarginBetween((d) => 60)
+            .compactMarginPair((d) => 50)
+            .neighbourMargin((a, b) => 40)
+            .siblingsMargin((d) => 30)
+            .buttonContent(({ node, state }) => {
+                return `<div style="width:24px; height:24px; background:#34495e; color:white; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:14px; cursor:pointer; border:2px solid white; box-shadow: 0 2px 5px rgba(0,0,0,0.4); font-weight:bold;">
+                    ${node.children ? '-' : '+'}
+                </div>`;
+            })
+            .nodeContent(function (d, i, arr, state) {
+                return `
+                    <div style="width:${d.width}px;height:${d.height}px;padding:10px; position:relative; box-sizing:border-box;">
+                        <div style="background:linear-gradient(135deg, ${d.data.color} 0%, ${d.data.color}99 100%); color:white; width:100%; height:100%; border-radius:12px; padding:15px; box-shadow: 0 4px 12px rgba(0,0,0,0.15); border: 2px solid ${d.data.color}33; display:flex; flex-direction:column; justify-content:center; align-items:center; text-align:center; box-sizing:border-box;">
+                            <div style="font-size:22px; margin-bottom:6px;">${d.data.icon}</div>
+                            <div style="font-size:13px; font-weight:bold; margin-bottom:4px; line-height:1.2;">${d.data.nombre}</div>
+                            <div style="font-size:9px; opacity:0.95; line-height:1.2;">${d.data.descripcion}</div>
+                            <div style="position:absolute; bottom:10px; right:12px; font-size:8px; background:rgba(255,255,255,0.25); padding:2px 6px; border-radius:10px; font-weight:bold;">
+                                ${d.data.tipo.toUpperCase()}
+                            </div>
                         </div>
                     </div>
-                            `;
-      })
-      .container('.chart-container')
-      .data(data)
-      .render();
-  });
-</script>
+                `;
+            })
+            .container('.chart-container')
+            .data(areasData)
+            .render();
+
+        // Forzar posición de botones y líneas después del render
+        setTimeout(() => {
+            // Mover todos los botones fuera de los nodos
+            d3.selectAll('.expander')
+                .style('transform', 'translate(-25px, -25px)')
+                .style('z-index', '1000')
+                .style('position', 'absolute');
+            
+            // Asegurar que las líneas conecten desde fuera
+            d3.selectAll('.link')
+                .style('stroke', '#34495e')
+                .style('stroke-width', '3px')
+                .style('opacity', '0.8')
+                .style('stroke-linecap', 'round');
+            
+            // Ajustar el contenedor de nodos para que no recorte
+            d3.selectAll('.node')
+                .style('overflow', 'visible');
+                
+            chart.fit().center();
+        }, 300);
+
+    </script>
+</body>
+</html>

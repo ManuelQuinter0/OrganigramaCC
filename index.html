@@ -58,36 +58,37 @@
             stroke: none !important;
         }
         
+        /* Estilos para TODAS las líneas */
         .org-chart .link {
             stroke: #34495e !important;
-            stroke-width: 3px !important;
+            stroke-width: 4px !important;
             opacity: 0.8 !important;
+            stroke-linecap: round !important;
         }
         
         .org-chart .expander {
-            transform: translate(-20px, -20px) !important;
+            transform: translate(-15px, -15px) !important;
             z-index: 1000 !important;
         }
         
         .org-chart .node {
             overflow: visible !important;
         }
+        
+        /* Asegurar que todas las líneas SVG tengan el mismo grosor */
+        .chart-container svg path {
+            stroke-width: 4px !important;
+            stroke: #34495e !important;
+        }
+        
+        .chart-container svg line {
+            stroke-width: 4px !important;
+            stroke: #34495e !important;
+        }
     </style>
 </head>
 <body>
-    <div class="header">
-        <h1>Estructura Organizacional</h1>
-        <h2>Sistema Integrado de Gestión Corporativa</h2>
-        <div class="valores">
-            <div class="valor" style="background: #3498db;">Calidad</div>
-            <div class="valor" style="background: #e74c3c;">Innovación</div>
-            <div class="valor" style="background: #27ae60;">Respeto</div>
-            <div class="valor" style="background: #f39c12;">Disciplina</div>
-            <div class="valor" style="background: #9b59b6;">Confiabilidad</div>
-            <div class="valor" style="background: #1abc9c;">Desarrollo</div>
-            <div class="valor" style="background: #d35400;">Gestión</div>
-        </div>
-    </div>
+    
     <div class="chart-container"></div>
 
     <script src="https://d3js.org/d3.v7.min.js"></script>
@@ -524,30 +525,33 @@
             }
         ];
 
-        // Crear el organigrama con configuraciones específicas
+        // Crear el organigrama
         const chart = new d3.OrgChart()
-            .nodeHeight((d) => 85)
-            .nodeWidth((d) => 210)
-            .childrenMargin((d) => 90)
-            .compactMarginBetween((d) => 60)
-            .compactMarginPair((d) => 50)
-            .neighbourMargin((a, b) => 40)
-            .siblingsMargin((d) => 30)
+            .nodeHeight((d) => 90)
+            .nodeWidth((d) => 230)
+            .childrenMargin((d) => 85)
+            .compactMarginBetween((d) => 55)
+            .compactMarginPair((d) => 45)
+            .neighbourMargin((a, b) => 35)
+            .siblingsMargin((d) => 25)
             .buttonContent(({ node, state }) => {
-                return `<div style="width:24px; height:24px; background:#34495e; color:white; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:14px; cursor:pointer; border:2px solid white; box-shadow: 0 2px 5px rgba(0,0,0,0.4); font-weight:bold;">
+                return `<div style="width:16px; height:16px; background:#34495e; color:white; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:10px; cursor:pointer; border:1px solid white; box-shadow: 0 1px 3px rgba(0,0,0,0.3); font-weight:bold;">
                     ${node.children ? '-' : '+'}
                 </div>`;
             })
             .nodeContent(function (d, i, arr, state) {
                 return `
-                    <div style="width:${d.width}px;height:${d.height}px;padding:10px; position:relative; box-sizing:border-box;">
-                        <div style="background:linear-gradient(135deg, ${d.data.color} 0%, ${d.data.color}99 100%); color:white; width:100%; height:100%; border-radius:12px; padding:15px; box-shadow: 0 4px 12px rgba(0,0,0,0.15); border: 2px solid ${d.data.color}33; display:flex; flex-direction:column; justify-content:center; align-items:center; text-align:center; box-sizing:border-box;">
-                            <div style="font-size:22px; margin-bottom:6px;">${d.data.icon}</div>
-                            <div style="font-size:13px; font-weight:bold; margin-bottom:4px; line-height:1.2;">${d.data.nombre}</div>
-                            <div style="font-size:9px; opacity:0.95; line-height:1.2;">${d.data.descripcion}</div>
-                            <div style="position:absolute; bottom:10px; right:12px; font-size:8px; background:rgba(255,255,255,0.25); padding:2px 6px; border-radius:10px; font-weight:bold;">
+                    <div style="width:${d.width}px;height:${d.height}px;padding:6px; position:relative; box-sizing:border-box;">
+                        <div style="background:linear-gradient(135deg, ${d.data.color} 0%, ${d.data.color}99 100%); color:white; width:100%; height:100%; border-radius:8px; padding:8px; box-shadow: 0 4px 10px rgba(0,0,0,0.15); border: 2px solid ${d.data.color}33; display:flex; flex-direction:column; justify-content:center; align-items:center; text-align:center; box-sizing:border-box; position:relative;">
+                            <!-- Tipo en esquina superior derecha -->
+                            <div style="position:absolute; top:6px; right:6px; font-size:6px; background:rgba(255,255,255,0.25); padding:1px 4px; border-radius:4px; font-weight:bold;">
                                 ${d.data.tipo.toUpperCase()}
                             </div>
+                            
+                            <!-- Contenido principal -->
+                            <div style="font-size:16px; margin-bottom:1px; flex-shrink:0;">${d.data.icon}</div>
+                            <div style="font-size:11px; font-weight:bold; line-height:1.1; margin-bottom:0px; min-height:24px; display:flex; align-items:center; justify-content:center;">${d.data.nombre}</div>
+                            <div style="font-size:8px; opacity:0.95; line-height:1.1; margin-bottom:2px; min-height:16px; display:flex; align-items:center; justify-content:center;">${d.data.descripcion}</div>
                         </div>
                     </div>
                 `;
@@ -556,20 +560,37 @@
             .data(areasData)
             .render();
 
-        // Forzar posición de botones y líneas después del render
-        setTimeout(() => {
-            // Mover todos los botones fuera de los nodos
-            d3.selectAll('.expander')
-                .style('transform', 'translate(-25px, -25px)')
-                .style('z-index', '1000')
-                .style('position', 'absolute');
-            
-            // Asegurar que las líneas conecten desde fuera
-            d3.selectAll('.link')
+        // Función para aplicar grosor consistente a todas las líneas
+        function applyConsistentLineWidth() {
+            // Aplicar a todas las líneas SVG
+            d3.selectAll('.chart-container svg path')
+                .style('stroke-width', '4px')
                 .style('stroke', '#34495e')
-                .style('stroke-width', '3px')
                 .style('opacity', '0.8')
                 .style('stroke-linecap', 'round');
+            
+            d3.selectAll('.chart-container svg line')
+                .style('stroke-width', '4px')
+                .style('stroke', '#34495e')
+                .style('opacity', '0.8')
+                .style('stroke-linecap', 'round');
+            
+            // Aplicar también a las líneas de la librería
+            d3.selectAll('.link')
+                .style('stroke-width', '4px')
+                .style('stroke', '#34495e')
+                .style('opacity', '0.8')
+                .style('stroke-linecap', 'round');
+        }
+
+        // Aplicar estilos consistentes después del render y en cada actualización
+        setTimeout(() => {
+            applyConsistentLineWidth();
+            
+            // Mover todos los botones fuera de los nodos
+            d3.selectAll('.expander')
+                .style('transform', 'translate(-15px, -15px)')
+                .style('z-index', '1000');
             
             // Ajustar el contenedor de nodos para que no recorte
             d3.selectAll('.node')
@@ -577,6 +598,21 @@
                 
             chart.fit().center();
         }, 300);
+
+        // Observar cambios en el DOM para aplicar estilos a nuevas líneas
+        const observer = new MutationObserver(function(mutations) {
+            mutations.forEach(function(mutation) {
+                if (mutation.addedNodes.length) {
+                    setTimeout(applyConsistentLineWidth, 50);
+                }
+            });
+        });
+
+        // Observar el contenedor del chart para cambios
+        observer.observe(document.querySelector('.chart-container'), {
+            childList: true,
+            subtree: true
+        });
 
     </script>
 </body>

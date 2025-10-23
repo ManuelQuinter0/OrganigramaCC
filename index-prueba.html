@@ -3,107 +3,70 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Organigrama - Estructura Corporativa</title>
+    <title>Organigrama - Constructora Centenario</title>
     <style>
         body {
             margin: 0;
-            padding: 20px;
+            padding: 0;
             font-family: 'Arial', sans-serif;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            background: url('https://constructoracentenario.com/wp-content/uploads/2024/04/LogoConstructoraCen2024.png') center center no-repeat;
+            background-size: cover;
             min-height: 100vh;
-        }
-        .chart-container {
-            width: 100%;
-            height: 90vh;
-            background: white;
-            border-radius: 15px;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
-            overflow: auto;
-            padding: 20px;
-        }
-        .header {
-            text-align: center;
-            margin-bottom: 30px;
-            color: white;
-            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
-        }
-        .header h1 {
-            margin: 0;
-            font-size: 32px;
-            font-weight: bold;
-        }
-        .header h2 {
-            margin: 10px 0 0 0;
-            font-size: 18px;
-            opacity: 0.9;
-            font-weight: normal;
-        }
-        .valores {
             display: flex;
             justify-content: center;
-            flex-wrap: wrap;
-            gap: 10px;
-            margin-top: 15px;
+            align-items: center;
         }
-        .valor {
-            padding: 5px 12px;
-            border-radius: 20px;
-            font-size: 12px;
-            font-weight: bold;
-            color: white;
+        
+        .chart-container {
+            width: 98%;
+            height: 98vh;
+            background: rgba(173, 216, 230, 0.7);
+            border-radius: 8px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+            overflow: auto;
+            padding: 5px;
+            backdrop-filter: blur(2px);
+            border: 1px solid rgba(255, 255, 255, 0.3);
         }
+        
         .loading {
             text-align: center;
             padding: 40px;
-            color: #666;
+            color: #2c3e50;
             font-size: 18px;
+            font-weight: bold;
         }
+        
         .error {
             text-align: center;
             padding: 40px;
-            color: #e74c3c;
+            color: #c0392b;
             font-size: 16px;
+            background: rgba(255, 255, 255, 0.9);
+            border-radius: 8px;
+            margin: 20px;
         }
         
-        /* Estilos para asegurar que botones y líneas estén fuera */
-        .org-chart .node-rect {
-            stroke: none !important;
-        }
-        
-        /* Estilos para TODAS las líneas */
-        .org-chart .link {
-            stroke: #34495e !important;
-            stroke-width: 4px !important;
-            opacity: 0.8 !important;
-            stroke-linecap: round !important;
-        }
-        
-        .org-chart .expander {
-            transform: translate(-15px, -15px) !important;
-            z-index: 1000 !important;
-        }
-        
-        .org-chart .node {
-            overflow: visible !important;
-        }
-        
-        /* Asegurar que todas las líneas SVG tengan el mismo grosor */
-        .chart-container svg path {
-            stroke-width: 4px !important;
-            stroke: #34495e !important;
-        }
-        
-        .chart-container svg line {
-            stroke-width: 4px !important;
-            stroke: #34495e !important;
+        .debug-info {
+            text-align: left;
+            padding: 20px;
+            color: #2c3e50;
+            font-size: 12px;
+            background: rgba(255, 255, 255, 0.9);
+            border-radius: 8px;
+            margin: 10px;
+            font-family: monospace;
+            max-height: 200px;
+            overflow: auto;
         }
     </style>
 </head>
 <body>
     <div class="chart-container">
         <div class="loading" id="loading">
-            Cargando datos del organigrama...
+            Conectando con Google Sheets...
         </div>
+        <div id="debug"></div>
     </div>
 
     <script src="https://d3js.org/d3.v7.min.js"></script>
@@ -111,107 +74,184 @@
     <script src="https://cdn.jsdelivr.net/npm/d3-flextree@2.1.2/build/d3-flextree.js"></script>
 
     <script>
-        // CONFIGURACIÓN - REEMPLAZA CON TU URL DE GOOGLE SHEETS
-        const GOOGLE_SHEETS_URL = 'https://docs.google.com/spreadsheets/d/TU_ID_DE_HOJA_DE_CÁLCULO/gviz/tq?tqx=out:csv&sheet=NombreDeTuHoja';
-        
+        // URLs alternativas para probar
+        const SHEET_URLS = [
+            'https://docs.google.com/spreadsheets/d/e/2PACX-1vST1olXLCy87dbQ2oc8dsYL8LKL_K4cqbcBfiw51bsyFaPnSMGi446mahJ3AQw_Dph7ert2GSVDs516/pub?gid=0&single=true&output=csv',
+            'https://docs.google.com/spreadsheets/d/e/2PACX-1vST1olXLCy87dbQ2oc8dsYL8LKL_K4cqbcBfiw51bsyFaPnSMGi446mahJ3AQw_Dph7ert2GSVDs516/pub?output=csv'
+        ];
+
+        function debug(message) {
+            console.log(message);
+            const debugDiv = document.getElementById('debug');
+            if (debugDiv) {
+                debugDiv.innerHTML += '<div>' + message + '</div>';
+            }
+        }
+
         // Función para cargar datos desde Google Sheets
         async function loadDataFromGoogleSheets() {
-            try {
-                // Mostrar loading
-                document.getElementById('loading').innerHTML = 'Cargando datos del organigrama...';
-                
-                // NOTA: Para usar esta función necesitas:
-                // 1. Publicar tu Google Sheet (Archivo > Compartir > Publicar en web)
-                // 2. Reemplazar la URL con la tuya
-                // 3. Asegurarte que las columnas sean: id, parentId, nombre, tipo, descripcion, color, icon
-                
-                // Si no tienes la URL lista, puedes usar este ejemplo temporal:
-                const demoData = [
-                    {
-                        id: "1",
-                        parentId: "",
-                        nombre: "Asamblea General de Accionistas",
-                        tipo: "gobierno",
-                        descripcion: "Máximo órgano de gobierno",
-                        color: "#2c3e50",
-                        icon: "🏛️"
-                    },
-                    {
-                        id: "2", 
-                        parentId: "1",
-                        nombre: "Junta Directiva",
-                        tipo: "gobierno",
-                        descripcion: "Dirección estratégica corporativa",
-                        color: "#34495e",
-                        icon: "👑"
+            let lastError = '';
+            
+            // Probar diferentes URLs
+            for (const sheetUrl of SHEET_URLS) {
+                try {
+                    debug('🔗 Probando URL: ' + sheetUrl);
+                    document.getElementById('loading').innerHTML = 'Conectando con Google Sheets...<br>' + sheetUrl;
+                    
+                    const response = await fetch(sheetUrl);
+                    debug('📡 Status de respuesta: ' + response.status);
+                    
+                    if (!response.ok) {
+                        throw new Error(`Error HTTP: ${response.status} ${response.statusText}`);
                     }
-                ];
-                
-                // Por ahora usamos datos de demostración
-                // Descomenta la siguiente línea cuando tengas tu Google Sheet listo
-                // const response = await fetch(GOOGLE_SHEETS_URL);
-                // const csvText = await response.text();
-                // const areasData = parseCSV(csvText);
-                
-                const areasData = demoData;
-                
-                // Ocultar loading
-                document.getElementById('loading').style.display = 'none';
-                
-                return areasData;
-                
-            } catch (error) {
-                console.error('Error cargando datos:', error);
-                document.getElementById('loading').innerHTML = 
-                    '<div class="error">Error cargando datos: ' + error.message + 
-                    '<br><br>Para conectar con Google Sheets:<br>' +
-                    '1. Publica tu Sheet (Archivo > Compartir > Publicar en web)<br>' +
-                    '2. Reemplaza la URL en la variable GOOGLE_SHEETS_URL</div>';
-                return [];
+                    
+                    const csvText = await response.text();
+                    debug('✅ Datos recibidos. Longitud: ' + csvText.length + ' caracteres');
+                    debug('📄 Primeros 500 caracteres: ' + csvText.substring(0, 500));
+                    
+                    if (!csvText || csvText.trim() === '') {
+                        throw new Error('El archivo CSV está vacío');
+                    }
+                    
+                    const areasData = parseCSV(csvText);
+                    debug('📊 Datos parseados: ' + areasData.length + ' registros');
+                    
+                    if (areasData.length > 0) {
+                        document.getElementById('loading').style.display = 'none';
+                        document.getElementById('debug').style.display = 'none';
+                        return areasData;
+                    } else {
+                        throw new Error('No se pudieron parsear datos del CSV');
+                    }
+                    
+                } catch (error) {
+                    lastError = error.message;
+                    debug('❌ Error con URL: ' + error.message);
+                    // Continuar con la siguiente URL
+                }
             }
+            
+            // Si todas las URLs fallaron
+            throw new Error('Todas las URLs fallaron. Último error: ' + lastError);
         }
 
         // Función para parsear CSV
         function parseCSV(csvText) {
-            const lines = csvText.split('\n');
-            const headers = lines[0].split(',').map(h => h.trim().replace(/"/g, ''));
+            debug('🔍 Parseando CSV...');
+            
+            const lines = csvText.split('\n').filter(line => line.trim() !== '');
+            debug('📏 Líneas encontradas: ' + lines.length);
+            
+            if (lines.length === 0) {
+                debug('❌ No hay líneas para procesar');
+                return [];
+            }
+            
+            // Mostrar las primeras líneas para debugging
+            lines.slice(0, 3).forEach((line, index) => {
+                debug('📝 Línea ' + index + ': ' + line.substring(0, 100));
+            });
+            
+            // Detectar separador
+            const firstLine = lines[0];
+            let separator = ',';
+            if (firstLine.includes(';') && !firstLine.includes(',')) {
+                separator = ';';
+            } else if (firstLine.includes('\t')) {
+                separator = '\t';
+            }
+            
+            debug('🔧 Separador detectado: "' + separator + '"');
+            
+            const headers = lines[0].split(separator).map(h => h.trim().replace(/"/g, '').toLowerCase());
+            debug('🏷️ Headers: ' + JSON.stringify(headers));
             
             const data = [];
+            
             for (let i = 1; i < lines.length; i++) {
-                if (lines[i].trim() === '') continue;
+                const line = lines[i];
+                if (line.trim() === '') continue;
                 
-                const values = lines[i].split(',').map(v => v.trim().replace(/"/g, ''));
+                const values = parseCSVLine(line, separator);
                 const row = {};
                 
                 headers.forEach((header, index) => {
-                    row[header] = values[index] || '';
+                    row[header] = (values[index] || '').trim().replace(/^"|"$/g, '');
                 });
                 
-                // Procesar datos
-                if (row.id && row.id.trim() !== '') {
+                debug('➡️ Procesando fila: ' + JSON.stringify(row));
+                
+                // Mapear diferentes nombres de columnas posibles
+                const id = row.id || row['id'] || '';
+                const parentId = row.parentid || row['parentid'] || row['parent id'] || row['parent'] || '';
+                const nombre = row.nombre || row['nombre'] || row['name'] || row['cargo'] || '';
+                const tipo = row.tipo || row['tipo'] || row['type'] || 'general';
+                const descripcion = row.descripcion || row['descripcion'] || row['description'] || row['desc'] || '';
+                const color = row.color || row['color'] || row['colour'] || '#95a5a6';
+                const icon = row.icon || row['icon'] || row['emoji'] || '📋';
+                
+                if (id && id.trim() !== '') {
                     data.push({
-                        id: row.id.trim(),
-                        parentId: row.parentId ? row.parentId.trim() : '',
-                        nombre: row.nombre ? row.nombre.trim() : '',
-                        tipo: row.tipo ? row.tipo.trim() : 'general',
-                        descripcion: row.descripcion ? row.descripcion.trim() : '',
-                        color: row.color ? row.color.trim() : '#95a5a6',
-                        icon: row.icon ? row.icon.trim() : '📋'
+                        id: id.trim(),
+                        parentId: parentId ? parentId.trim() : '',
+                        nombre: nombre ? nombre.trim() : 'Sin nombre',
+                        tipo: tipo ? tipo.trim() : 'general',
+                        descripcion: descripcion ? descripcion.trim() : '',
+                        color: color ? color.trim() : '#95a5a6',
+                        icon: icon ? icon.trim() : '📋'
                     });
+                    debug('✅ Fila agregada: ' + id + ' - ' + nombre);
+                } else {
+                    debug('❌ Fila sin ID, omitiendo: ' + JSON.stringify(row));
                 }
             }
             
+            debug('🎉 Total de datos procesados: ' + data.length);
             return data;
+        }
+
+        function parseCSVLine(line, separator) {
+            const result = [];
+            let current = '';
+            let inQuotes = false;
+            
+            for (let i = 0; i < line.length; i++) {
+                const char = line[i];
+                
+                if (char === '"') {
+                    inQuotes = !inQuotes;
+                } else if (char === separator && !inQuotes) {
+                    result.push(current);
+                    current = '';
+                } else {
+                    current += char;
+                }
+            }
+            
+            result.push(current);
+            return result;
         }
 
         // Función para crear el organigrama
         function createOrgChart(areasData) {
             if (areasData.length === 0) {
-                document.getElementById('loading').innerHTML = 
-                    '<div class="error">No se encontraron datos para mostrar el organigrama</div>';
+                const errorHTML = `
+                    <div class="error">
+                        No se encontraron datos para mostrar el organigrama<br><br>
+                        Por favor verifica:<br>
+                        1. Que el Google Sheet esté publicado correctamente<br>
+                        2. Que tenga datos en las columnas: id, parentId, nombre, tipo, descripcion, color, icon<br>
+                        3. Que la primera fila tenga los nombres de las columnas<br>
+                        4. Revisa la consola (F12) para más detalles
+                    </div>
+                `;
+                document.getElementById('loading').innerHTML = errorHTML;
                 return;
             }
 
+            debug('🚀 Creando organigrama con ' + areasData.length + ' elementos');
+            
+            // Mientras tanto, mostrar datos de ejemplo para probar
             const chart = new d3.OrgChart()
                 .nodeHeight((d) => 90)
                 .nodeWidth((d) => 230)
@@ -221,7 +261,7 @@
                 .neighbourMargin((a, b) => 35)
                 .siblingsMargin((d) => 25)
                 .buttonContent(({ node, state }) => {
-                    return `<div style="width:16px; height:16px; background:#34495e; color:white; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:10px; cursor:pointer; border:1px solid white; box-shadow: 0 1px 3px rgba(0,0,0,0.3); font-weight:bold;">
+                    return `<div style="width:16px; height:16px; background:#2c3e50; color:white; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:10px; cursor:pointer; border:1px solid white; box-shadow: 0 1px 3px rgba(0,0,0,0.3); font-weight:bold;">
                         ${node.children ? '-' : '+'}
                     </div>`;
                 })
@@ -229,12 +269,9 @@
                     return `
                         <div style="width:${d.width}px;height:${d.height}px;padding:6px; position:relative; box-sizing:border-box;">
                             <div style="background:linear-gradient(135deg, ${d.data.color} 0%, ${d.data.color}99 100%); color:white; width:100%; height:100%; border-radius:8px; padding:8px; box-shadow: 0 4px 10px rgba(0,0,0,0.15); border: 2px solid ${d.data.color}33; display:flex; flex-direction:column; justify-content:center; align-items:center; text-align:center; box-sizing:border-box; position:relative;">
-                                <!-- Tipo en esquina superior derecha -->
                                 <div style="position:absolute; top:6px; right:6px; font-size:6px; background:rgba(255,255,255,0.25); padding:1px 4px; border-radius:4px; font-weight:bold;">
                                     ${d.data.tipo.toUpperCase()}
                                 </div>
-                                
-                                <!-- Contenido principal -->
                                 <div style="font-size:16px; margin-bottom:1px; flex-shrink:0;">${d.data.icon}</div>
                                 <div style="font-size:11px; font-weight:bold; line-height:1.1; margin-bottom:0px; min-height:24px; display:flex; align-items:center; justify-content:center;">${d.data.nombre}</div>
                                 <div style="font-size:8px; opacity:0.95; line-height:1.1; margin-bottom:2px; min-height:16px; display:flex; align-items:center; justify-content:center;">${d.data.descripcion}</div>
@@ -246,30 +283,13 @@
                 .data(areasData)
                 .render();
 
-            // Función para aplicar grosor consistente a todas las líneas
-            function applyConsistentLineWidth() {
-                d3.selectAll('.chart-container svg path')
-                    .style('stroke-width', '4px')
-                    .style('stroke', '#34495e')
-                    .style('opacity', '0.8')
-                    .style('stroke-linecap', 'round');
-                
-                d3.selectAll('.chart-container svg line')
-                    .style('stroke-width', '4px')
-                    .style('stroke', '#34495e')
-                    .style('opacity', '0.8')
-                    .style('stroke-linecap', 'round');
-                
-                d3.selectAll('.link')
-                    .style('stroke-width', '4px')
-                    .style('stroke', '#34495e')
-                    .style('opacity', '0.8')
-                    .style('stroke-linecap', 'round');
-            }
-
-            // Aplicar estilos consistentes
+            // Aplicar estilos a las líneas
             setTimeout(() => {
-                applyConsistentLineWidth();
+                d3.selectAll('.chart-container svg path, .chart-container svg line, .link')
+                    .style('stroke-width', '4px')
+                    .style('stroke', '#2c3e50')
+                    .style('opacity', '0.9')
+                    .style('stroke-linecap', 'round');
                 
                 d3.selectAll('.expander')
                     .style('transform', 'translate(-15px, -15px)')
@@ -279,34 +299,28 @@
                     .style('overflow', 'visible');
                     
                 chart.fit().center();
-            }, 300);
-
-            // Observar cambios para aplicar estilos a nuevas líneas
-            const observer = new MutationObserver(function(mutations) {
-                mutations.forEach(function(mutation) {
-                    if (mutation.addedNodes.length) {
-                        setTimeout(applyConsistentLineWidth, 50);
-                    }
-                });
-            });
-
-            observer.observe(document.querySelector('.chart-container'), {
-                childList: true,
-                subtree: true
-            });
+                
+                debug('🎊 Organigrama renderizado correctamente!');
+            }, 500);
 
             return chart;
         }
 
-        // Cargar datos y crear el organigrama
+        // Inicializar
         async function initializeOrgChart() {
-            const areasData = await loadDataFromGoogleSheets();
-            createOrgChart(areasData);
+            try {
+                const areasData = await loadDataFromGoogleSheets();
+                createOrgChart(areasData);
+            } catch (error) {
+                debug('💥 Error crítico: ' + error.message);
+                document.getElementById('loading').innerHTML = 
+                    '<div class="error">Error cargando datos: ' + error.message + 
+                    '<br><br>Revisa la consola (F12) para más detalles.</div>';
+            }
         }
 
-        // Inicializar
-        initializeOrgChart();
-
+        // Iniciar cuando se carga la página
+        document.addEventListener('DOMContentLoaded', initializeOrgChart);
     </script>
 </body>
 </html>
